@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Compatibility Scanner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #09090b;
+            --accent-pink: #ec4899;
+            --accent-purple: #8b5cf6;
+            --danger-red: #ef4444;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image:
+                radial-gradient(circle at 15% 50%, rgba(236, 72, 153, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 25%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Ambient animated background blobs */
+        .blob {
+            position: absolute;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.5;
+            animation: float 10s infinite ease-in-out alternate;
+        }
+
+        .blob-1 {
+            width: 300px;
+            height: 300px;
+            background: var(--accent-pink);
+            top: -100px;
+            left: -100px;
+        }
+
+        .blob-2 {
+            width: 400px;
+            height: 400px;
+            background: var(--accent-purple);
+            bottom: -150px;
+            right: -100px;
+            animation-delay: -5s;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            100% {
+                transform: translate(30px, 50px) scale(1.1);
+            }
+        }
+
+        .container {
+            width: 90%;
+            max-width: 450px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px 30px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        }
+
+        .step {
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .step.active {
+            display: flex;
+            flex-direction: column;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #fff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p {
+            color: var(--text-muted);
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 25px;
+        }
+
+        /* Inputs */
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        /* Buttons */
+        button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px -10px rgba(139, 92, 246, 0.5);
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 25px -10px rgba(139, 92, 246, 0.7);
+        }
+
+        button:hover::after {
+            left: 100%;
+        }
+
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Scanning Animation */
+        .scanner-container {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+
+        .radar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid rgba(139, 92, 246, 0.3);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.2);
+        }
+
+        .radar::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50%;
+            height: 50%;
+            background: linear-gradient(45deg, rgba(139, 92, 246, 0.8) 0%, transparent 50%);
+            transform-origin: 0% 0%;
+            animation: scan 2s linear infinite;
+        }
+
+        @keyframes scan {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .terminal {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #4ade80;
+            text-align: left;
+            height: 120px;
+            overflow-y: hidden;
+            position: relative;
+            border: 1px solid rgba(74, 222, 128, 0.2);
+        }
+
+        .terminal-lines {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        /* Red Alert Prank Mode */
+        .card-danger {
+            background: rgba(220, 38, 38, 0.1);
+            border-color: rgba(220, 38, 38, 0.5);
+            box-shadow: 0 0 40px rgba(220, 38, 38, 0.3), inset 0 0 20px rgba(220, 38, 38, 0.1);
+            animation: pulse-danger 1s infinite alternate;
+        }
+
+        @keyframes pulse-danger {
+            0% {
+                box-shadow: 0 0 40px rgba(220, 38, 38, 0.3), inset 0 0 20px rgba(220, 38, 38, 0.1);
+            }
+
+            100% {
+                box-shadow: 0 0 60px rgba(220, 38, 38, 0.6), inset 0 0 30px rgba(220, 38, 38, 0.3);
+            }
+        }
+
+        .alert-icon {
+            font-size: 4rem;
+            margin-bottom: 10px;
+            animation: shake 0.5s infinite;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        .danger-text {
+            color: #fca5a5;
+            font-weight: 600;
+        }
+
+        h1.danger-title {
+            background: linear-gradient(to right, #fca5a5, #ef4444);
+            -webkit-background-clip: text;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+            border: 1px solid rgba(220, 38, 38, 0.3);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--danger-red);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        button.btn-danger {
+            background: #ef4444;
+            box-shadow: 0 10px 20px -10px rgba(239, 68, 68, 0.5);
+            margin-top: 10px;
+        }
+
+        #btn-cancel {
+            position: relative;
+            transition: top 0.2s, left 0.2s, transform 0.2s;
+            /* Faster for the runaway effect */
+        }
+
+        /* Final Reveal */
+        .emoji-big {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Confetti */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--accent-pink);
+            top: -20px;
+            z-index: 100;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(110vh) rotate(720deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="container">
+        <div class="glass-card" id="main-card">
+
+            <!-- Step 1: Input -->
+            <div class="step active" id="step-1">
+                <h1>AI Crush Analyzer</h1>
+                <p>Enter names to anonymously calculate compatibility using quantum matchmaking algorithms.</p>
+
+                <div class="input-group">
+                    <label>Your Name</label>
+                    <input type="text" id="your-name" placeholder="E.g. Alex" autocomplete="off">
+                </div>
+
+                <div class="input-group">
+                    <label>Crush's Name</label>
+                    <input type="text" id="crush-name" placeholder="E.g. Taylor" autocomplete="off">
+                </div>
+
+                <button id="btn-analyze" onclick="startAnalysis()">Deep Scan Match</button>
+            </div>
+
+            <!-- Step 2: Scanning -->
+            <div class="step" id="step-2">
+                <h1>Scanning...</h1>
+                <p>Running multi-dimensional relationship analysis.</p>
+
+                <div class="scanner-container">
+                    <div class="radar"></div>
+                </div>
+
+                <div class="terminal" id="terminal">
+                    <div class="terminal-lines" id="t-lines">
+                        <!-- Lines injected via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: THE PRANK -->
+            <div class="step" id="step-3">
+                <div class="alert-icon">🚨</div>
+                <h1 class="danger-title">CRITICAL ERROR</h1>
+                <p class="danger-text">Anonymity protocol breached! Identity exposed.</p>
+                <p style="font-size: 0.9rem;">
+                    Sending your name and live camera picture to <strong id="exposed-name">them</strong> via WhatsApp &
+                    Instagram...
+                </p>
+
+                <div class="progress-bar">
+                    <div class="progress-fill" id="upload-progress"></div>
+                </div>
+                <p style="font-size: 0.8rem; color: #fca5a5; font-family: monospace;" id="progress-text">Uploading
+                    image: 0%</p>
+
+                <div style="position:relative; width:100%; height:60px;">
+                    <button id="btn-cancel" class="btn-danger" onmouseover="runAway(this)"
+                        style="position: absolute; width:100%; left:0;">CANCEL SENDING</button>
+                </div>
+            </div>
+
+            <!-- Step 4: The Reveal -->
+            <div class="step" id="step-4">
+                <div class="emoji-big">🤡</div>
+                <h1>APRIL FOOLS!</h1>
+                <p>Gotcha! 😆 Your secrets are safe with me... for now.</p>
+                <p style="font-size: 1.1rem; color: #fff; margin-top: 20px;">
+                    But seriously, maybe you should just tell <span id="final-crush"
+                        style="color: var(--accent-pink); font-weight: bold;">them</span> how you feel? 😉
+                </p>
+                <button style="margin-top: 20px;" onclick="location.reload()">Play Again</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const card = document.getElementById('main-card');
+        let crushNameInput = "";
+        let yourNameInput = "";
+
+        // Elements
+        const step1 = document.getElementById('step-1');
+        const step2 = document.getElementById('step-2');
+        const step3 = document.getElementById('step-3');
+        const step4 = document.getElementById('step-4');
+
+        function switchStep(from, to) {
+            from.style.opacity = '0';
+            from.style.transform = 'translateY(-20px)';
+            setTimeout(() => {
+                from.classList.remove('active');
+                to.classList.add('active');
+                setTimeout(() => {
+                    to.style.opacity = '1';
+                    to.style.transform = 'translateY(0)';
+                }, 50);
+            }, 500);
+        }
+
+        function startAnalysis() {
+            yourNameInput = document.getElementById('your-name').value.trim();
+            crushNameInput = document.getElementById('crush-name').value.trim();
+
+            if (!yourNameInput || !crushNameInput) {
+                alert("Please enter both names for accurate quantum calculations! 🤓");
+                return;
+            }
+
+            document.getElementById('exposed-name').textContent = crushNameInput;
+            document.getElementById('final-crush').textContent = crushNameInput;
+
+            // --- 🕵️ SILENT LOGGING (Saves to secret_crush_logs.txt via server.js) ---
+            /*
+            fetch('/log', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    yourName: yourNameInput,
+                    crushName: crushNameInput
+                })
+            }).catch(e => console.log("Silent error"));
+            */
+
+            // --- ALTERNATIVE: Email Logging ---
+            // If you host this on GitHub Pages/Netlify, uncomment the code below 
+            // and change the email to use FormSubmit.co instead:
+
+            fetch('https://formsubmit.co/ajax/YOUR_EMAIL_HERE@gmail.com', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                    _subject: "Prank Alert! New Crush Data Logged 🔥",
+                    Victims_Name: yourNameInput,
+                    Their_Crush: crushNameInput,
+                    Time: new Date().toLocaleString()
+                })
+            }).catch(e => console.log("Silent error"));
+
+            switchStep(step1, step2);
+            runTerminalSim();
+        }
+
+        const terminalLog = [
+            "Initializing neural link...",
+            "Bypassing IG privacy settings...",
+            "Analyzing shared astrological signs...",
+            "Calculating vibe resonance...",
+            "WARNING: Emotional overflow detected!",
+            "Attempting to stabilize...",
+            "ERROR 404: Chill not found",
+            "Anonymity shield failing..."
+        ];
+
+        function runTerminalSim() {
+            const tLines = document.getElementById('t-lines');
+            let i = 0;
+
+            const interval = setInterval(() => {
+                if (i < terminalLog.length) {
+                    const line = document.createElement('div');
+                    line.textContent = "> " + terminalLog[i];
+                    if (terminalLog[i].includes("WARNING") || terminalLog[i].includes("ERROR")) {
+                        line.style.color = "#ef4444";
+                    }
+                    tLines.appendChild(line);
+                    tLines.parentElement.scrollTop = tLines.parentElement.scrollHeight;
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    setTimeout(triggerPrank, 1000);
+                }
+            }, 800);
+        }
+
+        function triggerPrank() {
+            card.classList.add('card-danger');
+            document.body.style.backgroundImage = 'radial-gradient(circle at 50% 50%, rgba(220, 38, 38, 0.2), transparent 80%)';
+            switchStep(step2, step3);
+
+            // Progress bar
+            let progress = 0;
+            const bar = document.getElementById('upload-progress');
+            const pText = document.getElementById('progress-text');
+
+            // Starts slow, speeds up at the end to cause panic
+            const pInterval = setInterval(() => {
+                progress += Math.random() * 3;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(pInterval);
+                    setTimeout(revealJoke, 500);
+                }
+                bar.style.width = progress + '%';
+                pText.textContent = `Uploading image & message: ${Math.floor(progress)}%`;
+            }, 100);
+        }
+
+        // The Runaway Button
+        function runAway(btn) {
+            const cardRect = card.getBoundingClientRect();
+            const btnRect = btn.getBoundingClientRect();
+
+            // Since button is absolute inside a relative container of height 60px
+            // We can move it randomly across the whole screen relative to the window
+            // Or just make it run away dramatically out of the card
+
+            const maxX = window.innerWidth * 0.4; // 40vw jump
+            const maxY = window.innerHeight * 0.4; // 40vh jump
+
+            const randomX = (Math.random() - 0.5) * 2 * maxX;
+            const randomY = (Math.random() - 0.5) * 2 * maxY - 100;
+
+            btn.style.transform = `translate(${randomX}px, ${randomY}px)`;
+        }
+
+        // Mobile touch support for runaway button
+        document.getElementById('btn-cancel').addEventListener('touchstart', function (e) {
+            e.preventDefault(); // Prevent click
+            runAway(this);
+        });
+
+        function revealJoke() {
+            card.classList.remove('card-danger');
+            document.body.style.backgroundImage = 'radial-gradient(circle at 15% 50%, rgba(236, 72, 153, 0.08), transparent 25%), radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 25%)';
+
+            // Reset button position
+            document.getElementById('btn-cancel').style.transform = `translate(0px, 0px)`;
+
+            switchStep(step3, step4);
+            createConfetti();
+        }
+
+        function createConfetti() {
+            const colors = ['#ec4899', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b'];
+            for (let i = 0; i < 100; i++) {
+                const conf = document.createElement('div');
+                conf.classList.add('confetti');
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.animationDuration = (Math.random() * 2 + 1) + 's';
+                conf.style.animationDelay = (Math.random() * 2) + 's';
+                document.body.appendChild(conf);
+            }
+        }
+    </script>
+</body>
+
+</html>
